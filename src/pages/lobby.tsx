@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PlayerCard } from '../components/PlayerList';
 import { Button } from '@mui/material';
 import GameDetails from '../models/GameDetails';
+
+const { fetchGameDetails, fetchStartGame } = require('../data/ApiManager');
 
 interface GameLobbyState {
   gameId: string;
@@ -15,54 +16,43 @@ export const GameLobby: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation();
   const { gameId, host, playerName } = location.state as GameLobbyState;
-  const [gameDetails, setGameDetails] = useState(new GameDetails('',[],'', false));
+  const [gameDetails, setGameDetails] = useState(new GameDetails('', [], '', false));
+  const [gameStarted, setGameStarted] = useState(false)
 
   useEffect(() => {
-    fetchGameDetails()
-    const timer = setInterval(() => fetchGameDetails(), 5000)
+    getGameDetails()
+   /* const timer = setInterval(() => getGameDetails(), 5000)
 
     return () => {
-        clearInterval(timer);
-        }
+      clearInterval(timer);
+    }*/
   }, [gameId])
 
   useEffect(() => {
-    if (gameDetails.started) {
-      navigate("/game", { state: { gameId: gameId, playerName: playerName }})
+    console.log("gameDetails effect" + gameId + " " + JSON.stringify(gameDetails) + " " + playerName)
+    if (gameStarted) {
+      navigate("/QuizMaster/game", { state: { gameId: gameId, playerName: playerName } })
     }
-  }, [gameDetails])
+  }, [gameStarted])
 
-  if (!gameId) {
-    navigate("/")
+  if (!gameId && !process.env.REACT_APP_DEMO) {
+    navigate("/QuizMaster/")
     return <></>;
   }
 
-  const fetchGameDetails = () => {
-      console.log("fetch dets " + gameId + " " + JSON.stringify(gameDetails))
-      axios.get(`/games/details?gameId=${gameId}`)
-          .then((response) => {
-              const game = response.data;
-
-              console.log("game dets " + JSON.stringify(game))
-              setGameDetails(game)
-          })
-          .catch((error) => {
-              console.error(error);
-          })
+  const getGameDetails = () => {
+    console.log("fetch dets " + gameId + " " + JSON.stringify(gameDetails))
+    fetchGameDetails(gameId, (gameDetails: GameDetails) => setGameDetails(gameDetails));
   }
 
   const onStartGameClicked = () => {
     console.log("Start game " + gameId)
-      axios.get(`/games/start?gameId=${gameId}`)
-          .then((response) => {
-              const game = response.data;
-
-              console.log("game dets " + JSON.stringify(game))
-              setGameDetails(game)
-          })
-          .catch((error) => {
-              console.error(error);
-          })
+    fetchStartGame(gameId, (gameDetails: GameDetails) => {
+      console.log("start game callback" + gameId + " " + JSON.stringify(gameDetails))
+      if (gameDetails.started) {
+        setGameStarted(true);
+      }
+    })
   }
 
   return (
@@ -70,26 +60,26 @@ export const GameLobby: React.FC = () => {
       <main>
         <h2>Quiz Master</h2>
         <h1>Join code: {gameDetails.joinCode}</h1>
-      <div style={{borderColor:'#000', borderWidth: 5, backgroundColor: '#BBB'}}>
-          {gameDetails.players.map(player => <PlayerCard name={player}/>)}
-      </div>
+        <div style={{ borderColor: '#000', borderWidth: 5, backgroundColor: '#BBB' }}>
+          {gameDetails.players.map(player => <PlayerCard name={player} />)}
+        </div>
       </main>
       <nav>
         <Button
-            disabled={!host || gameDetails.players.length < 2}
-            variant="contained"
-            size="large"
-            onClick={onStartGameClicked}
-            style={{marginRight:10, height: 60}}>
-            Start Game
+          disabled={!host || gameDetails.players.length < 2}
+          variant="contained"
+          size="large"
+          onClick={onStartGameClicked}
+          style={{ marginRight: 10, height: 60 }}>
+          Start Game
         </Button>
         <Button
-            disabled={gameDetails.players.length < 2}
-            variant="contained"
-            size="medium"
-            onClick={() => navigate("/")}
-            style={{marginRight:10, height: 60}}>
-            Back
+          disabled={gameDetails.players.length < 2}
+          variant="contained"
+          size="medium"
+          onClick={() => navigate("/QuizMaster/")}
+          style={{ marginRight: 10, height: 60 }}>
+          Back
         </Button>
       </nav>
     </>

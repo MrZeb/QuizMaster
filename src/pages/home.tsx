@@ -3,6 +3,8 @@ import { Button, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import CSS from 'csstype';
 import axios from 'axios';
+import GameDetails from '../models/GameDetails';
+const { fetchHostGame, fetchJoinGame } = require('../data/ApiManager')
 
 const MainStyles: CSS.Properties = {
     display: 'flex',
@@ -20,34 +22,29 @@ const TextInput: CSS.Properties = {
 
 export function Home() {
     const navigate = useNavigate ()
-    const [name, setName] = useState('')
+    const [playerName, setPlayerName] = useState('')
     const [joinCode, setJoinCode] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
 
-    const onChange = (name: string) => setName(name);
+    const onChange = (name: string) => setPlayerName(name);
     const onChangeJoinCode = (joinCode: string) => setJoinCode(joinCode)
 
-    const handleHostClick = () => {
-        axios.post('/games/host', { players: [name] })
-            .then((response) => {
-                console.log(response.data);
-                const game = response.data;
-                console.log("game dets from host " + JSON.stringify(game))
-                navigate("lobby", { state: { gameId: game.id, host: true } })
-            })
-    }
+    console.log("DEMO? " + process.env.REACT_APP_DEMO)
 
-    const handleJoinClick = () => {
-        axios.post("/games/join", { playerName: name, joinCode: joinCode })
-            .then((response) => {
-                const game = response.data;
-                navigate("/lobby", { state: { playerName: name, gameId: game.id, host: false } })
-            })
-            .catch((err) => {
-                console.error(err);
-                setErrorMessage(err);
-            })
-    }
+    const handleHostClick = () => fetchHostGame(
+        playerName,
+        (gameDetails: GameDetails) => navigate("/QuizMaster/lobby", { state: { gameId: gameDetails.id, host: true, playerName: playerName } })
+    );
+
+    const handleJoinClick = () => fetchJoinGame(
+        (gameDetails: GameDetails, errorMessage: string) => {
+            if(errorMessage) {
+                setErrorMessage(errorMessage);
+            } else {
+                navigate("/QuizMaster/lobby", { state: { gameId: gameDetails.id, host: false, playerName: playerName } });
+            }
+        }
+    )
 
     console.log("Error message " + errorMessage);
     return (
@@ -59,13 +56,13 @@ export function Home() {
                     variant="outlined"
                     margin="normal"
                     style={TextInput}
-                    value={name}
+                    value={playerName}
                     onChange={(input) => onChange(input.target.value)}/>
             </main>
             <nav>
                 <div style={{display: "flex", flexDirection: "row", justifyContent: "center"}}>
                     <Button
-                        disabled={name.trim().length === 0}
+                        disabled={playerName.trim().length === 0}
                         variant="contained"
                         size="large"
                         onClick={handleHostClick}
@@ -74,7 +71,7 @@ export function Home() {
                     </Button>
                     <div style={{display: "flex", flexDirection: "column"}}>
                         <Button
-                            disabled={name.trim().length === 0 || joinCode.trim().length === 0}
+                            disabled={playerName.trim().length === 0 || joinCode.trim().length === 0}
                             variant="contained"
                             size="large"
                             onClick={handleJoinClick}

@@ -2,7 +2,7 @@
 import React, {createRef, useEffect, useState} from 'react';
 
 import CanvasDraw from "react-canvas-draw";
-import { Card, Grid, Slider } from '@mui/material';
+import { Card, Slider } from '@mui/material';
 import db from "../data/StorageManager";
 
 import DeleteIcon from '@mui/icons-material/Delete';

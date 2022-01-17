@@ -1,11 +1,11 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { DrawCanvas } from '../components/DrawFC';
 import GameDetails from "../models/GameDetails";
 import GameState from "../models/GameState";
-import db from "../data/StorageManager";
 import { TextField } from "@mui/material";
+
+const { fetchGameDetails, subscribeGameState, subscribeActiveDrawing }  = require('../data/ApiManager');
 
 interface GameProps {
     gameId: string;
@@ -17,37 +17,17 @@ export const Game = () => {
     const { gameId, playerName } = location.state as GameProps;
     const [gameDetails, setGameDetails] = useState(new GameDetails('',[],'', false));
     const [gameState, setGameState] = useState(new GameState(0,0,0,'','', 0));
-    const [latestDrawing, setLatestDrawing] = useState('')
+    const [activeDrawing, setActiveDrawing] = useState('')
 
     useEffect(() => {
-        axios.get(`/games/details?gameId=${gameId}`)
-          .then((response) => {
-              const game = response.data;
-
-              setGameDetails(game)
-          })
-          .catch((error) => {
-              console.error(error);
-          })
+        fetchGameDetails(gameId, (gameDetails: GameDetails) => setGameDetails(gameDetails))
     }, [])
 
     useEffect(() => {
         let isMounted = true;
       
-        var unsubscribeGameState = db.collection("games").doc("QfZbtcSjeLHLjQRAb8s7")
-            .onSnapshot((doc: any) => {
-                console.log("SNAPSHOT GAME STATE");
-                setGameState(doc.data().gameState)
-            });
-
-        var unsubscribeDrawings = db.collection("drawings")
-            .orderBy("createdAt", "desc")
-            .onSnapshot((querySnapshot) => {
-                console.log("SNAPSHOT DRAWING");
-                let savedDrawing = querySnapshot.docs[0].data().drawingData;
-                if (!savedDrawing){ return; }
-                setLatestDrawing(savedDrawing)
-        });
+        var unsubscribeGameState = subscribeGameState("QfZbtcSjeLHLjQRAb8s7", (gameState: GameState ) => setGameState(gameState))
+        var unsubscribeDrawings = subscribeActiveDrawing((drawing: string ) => setActiveDrawing(drawing))
 
         return () => {
             isMounted = false;
@@ -91,7 +71,7 @@ export const Game = () => {
                         {gameDetails.players.map((player, index) => <p>{index+1}. {player} 10 points</p>)}
                     </div>
                     <div style={{ zIndex: 1000 }}>
-                        <DrawCanvas enableDraw={myTurn} drawing={latestDrawing}/> 
+                        <DrawCanvas enableDraw={myTurn} drawing={activeDrawing}/> 
                     </div>
                     <div style={chat}>
                         <div style={{display: "flex", flexDirection: "column", height: "90%"}}>
@@ -103,7 +83,7 @@ export const Game = () => {
             </div>
         </main>
         <nav>
-            <Link to="/">Home</Link>
+            <Link to="/QuizMaster/">Home</Link>
         </nav>
         </>
     );
