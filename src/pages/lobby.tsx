@@ -19,8 +19,13 @@ export const GameLobby: React.FC = () => {
   const [gameDetails, setGameDetails] = useState(new GameDetails('', [], '', false));
   const [gameStarted, setGameStarted] = useState(false)
 
+  const getGameDetails = () => {
+    console.log("fetch dets " + gameId + " " + JSON.stringify(gameDetails))
+    fetchGameDetails(gameId, (gameDetails: GameDetails) => setGameDetails(gameDetails));
+  }
+
   useEffect(() => {
-    getGameDetails()
+    getGameDetails();
    /* const timer = setInterval(() => getGameDetails(), 5000)
 
     return () => {
@@ -40,10 +45,6 @@ export const GameLobby: React.FC = () => {
     return <></>;
   }
 
-  const getGameDetails = () => {
-    console.log("fetch dets " + gameId + " " + JSON.stringify(gameDetails))
-    fetchGameDetails(gameId, (gameDetails: GameDetails) => setGameDetails(gameDetails));
-  }
 
   const onStartGameClicked = () => {
     console.log("Start game " + gameId)

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import CSS from 'csstype';
-import axios from 'axios';
 import GameDetails from '../models/GameDetails';
 const { fetchHostGame, fetchJoinGame } = require('../data/ApiManager')
 
