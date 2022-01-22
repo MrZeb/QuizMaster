@@ -36,11 +36,16 @@ export function Home() {
     );
 
     const handleJoinClick = () => fetchJoinGame(
-        (gameDetails: GameDetails, errorMessage: string) => {
-            if(errorMessage) {
+        playerName,
+        joinCode,
+        (gameDetails: GameDetails | null, errorMessage?: string) => {
+            console.log("JOIN CALLBACK " + JSON.stringify(gameDetails))
+            if (errorMessage) {
                 setErrorMessage(errorMessage);
-            } else {
+            } else if (gameDetails) {
                 navigate("/QuizMaster/lobby", { state: { gameId: gameDetails.id, host: false, playerName: playerName } });
+            } else {
+                setErrorMessage("Game details null!");
             }
         }
     )
