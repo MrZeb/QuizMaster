@@ -26,10 +26,10 @@ const rounds: GameRound[] = [{
         ]
     }];
 */
-const mockGameDetails = new GameDetails('123', ['Seb', 'Zeb', 'KonstigHest', 'Sebux'], '1234', false, 10, 3);
-
-const defaultTotalPoints = mockGameDetails.players.map((player) => new PlayerPoints(player, 0));
+const players =  ['Seb', 'Zeb', 'KonstigHest', 'Sebux'];
+const defaultTotalPoints = players.map((player) => new PlayerPoints(player, 0));
 const mockGameState = new GameState(GamePhase.NOT_STARTED, 5, 0, 0, 0, "Pudge", "_____", 10, [], 0, [], defaultTotalPoints);
+const mockGameDetails = new GameDetails('123', players, '1234', 10, 3, mockGameState);
 
 const gameDetailsCallbacks: { (result: GameDetails): any }[] = [];
 const gameStateCallbacks: { (result: GameState): any }[] = [];
@@ -90,16 +90,6 @@ const preTurnTime = 5;
 const startPreTurn = () => {
     mockGameState.phase = GamePhase.PRE_TURN;
     console.log('Create hint Pre ' + JSON.stringify(mockGameState.rounds[mockGameState.round]));
-    const prompt = mockGameState.rounds[mockGameState.round].turns[mockGameState.turn].prompt;
-    mockGameState.prompt = prompt;
-    mockGameState.hint = prompt.split('').map((ch: string) => {
-        if (ch === ' ') {
-            return ' ';
-        } else {
-            return '_';
-        }
-    }).join('');
-
     console.log('Create hint ' + prompt + " -> " + mockGameState.hint);
 
     notifyGameStateListeners(mockGameState);
@@ -207,7 +197,6 @@ export const fetchStartGame = (gameId: string, customWords: string[], callback: 
     console.log("Start game. DEMO? " + demo)
     if (demo === "true") {
         const newGameDetails: GameDetails = mockGameDetails;
-        newGameDetails.started = true;
 
         if (gameDetailsCallbacks && gameDetailsCallbacks.length > 0) {
             gameDetailsCallbacks.forEach((callback) => callback(newGameDetails))
@@ -241,7 +230,15 @@ export const fetchStartGame = (gameId: string, customWords: string[], callback: 
             const turns = [];
 
             for( let p=0; p<mockGameDetails.players.length; p++) {
-                turns.push(new GameTurn(randomWords[i * p]));
+                const prompt = randomWords[i * p];
+                const hint = prompt.split('').map((ch: string) => {
+                    if (ch === ' ') {
+                        return ' ';
+                    } else {
+                        return '_';
+                    }
+                }).join('');
+                turns.push(new GameTurn(prompt, hint));
             }
             rounds.push(new GameRound(turns));
         }
@@ -254,7 +251,7 @@ export const fetchStartGame = (gameId: string, customWords: string[], callback: 
         return;
     }
 
-    axios.post('/games/start', { gameId: gameId, customWords: customWords })
+    axios.post('/games/start', { gameId: gameId, roundCount: 3, customWords: customWords })
         .then((response) => {
             const game = response.data;
 
@@ -281,9 +278,9 @@ export const subscribeGameDetails = (gameId: string, callback: (gameDetails: Gam
                 doc.id,
                 doc.data().players,
                 doc.data().joinCode,
-                doc.data().started,
                 doc.data().turnTime,
-                doc.data().roundCount
+                doc.data().roundCount,
+                doc.data().state
             )
 
             callback(gameDetails);
@@ -301,7 +298,7 @@ export const subscribeGameState = (gameId: string, callback: (gameState: GameSta
     return db.collection("games").doc(gameId)
         .onSnapshot((doc: any) => {
             console.log("SNAPSHOT GAME STATE " + JSON.stringify(doc.data()));
-            callback(doc.data().gameState);
+            callback(doc.data().state);
         });
 }
 

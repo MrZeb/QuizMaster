@@ -89,7 +89,9 @@ export const Game = () => {
         }
     }
 
-    if (!gameDetails || !gameState) {
+
+    console.log('ROUNDS ? ' + JSON.stringify(gameState));
+    if (!gameDetails || !gameState || !gameState.rounds || gameState.rounds.length <= 0) {
         // Not yet initialised
         return (<main>
             <div style={canvasStyles}>
@@ -98,13 +100,16 @@ export const Game = () => {
         )
     }
 
+    const getCurrentTurn = () => gameState.rounds[gameState.round].turns[gameState.turn];
+
     const activePlayerName = gameDetails.players[gameState.turn];
     const myTurn = playerName === activePlayerName && (gamePhase === GamePhase.ACTIVE_TURN || gamePhase === GamePhase.PRE_TURN);
 
     const infoView = <div style={info}>
         <h2>{gamePhase}</h2>
+        <h3>{gameDetails.id}</h3>
         <h3>Join code: {gameDetails.joinCode}</h3>
-        <h1>Round: {gameState.round + 1}/{gameState.rounds.length}</h1>
+        <h1>Round: {gameState.round + 1}/{gameState.rounds?.length}</h1>
         <h2>Turn: {gameState.turn + 1}/{gameDetails.players.length}</h2>
         <h2>I am: {playerName}</h2>
         <h2>Player turn: {activePlayerName}</h2>
@@ -144,7 +149,7 @@ export const Game = () => {
 
     const turnResultsView = <div style={{ zIndex: 1000, width: 600, height: 600 }}>
         <h1>Turn Results</h1>
-        {gameState.getCurrentTurn()?.points.map((item, index) => <p>{index + 1}. {item.player} {item.points}</p>)}
+        {getCurrentTurn()?.points?.map((item, index) => <p>{index + 1}. {item.player} {item.points}</p>)}
     </div>
 
     console.log("Render " + JSON.stringify(gameState.totalPoints));
@@ -170,7 +175,9 @@ export const Game = () => {
 
     const showPrompt = myTurn || gamePhase === GamePhase.POST_TURN;
     const showHint = gamePhase === GamePhase.ACTIVE_TURN;
-    const promptView = <h1 style={{ display: "flex", justifyContent: "center", letterSpacing: '4px' }}>{showPrompt ? gameState.prompt : showHint ? gameState.hint : ''}</h1>
+    const prompt = getCurrentTurn().prompt;
+    const hint = getCurrentTurn().hint;
+    const promptView = <h1 style={{ display: "flex", justifyContent: "center", letterSpacing: '4px' }}>{showPrompt ? prompt : showHint ? hint : ''}</h1>
 
     const timeLeftText = gamePhase === GamePhase.ACTIVE_TURN ? `Time left: ${turnTimeLeft > 0 ? turnTimeLeft : ''}` : '';
     const countdownView = <h3 style={{ display: "flex", justifyContent: "center" }}>{timeLeftText}</h3>
